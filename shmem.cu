@@ -7,6 +7,7 @@
 // Relevant nvprof metrics:
 // nvprof -m shared_load_throughput,shared_store_throughput
 
+#include <cstdint>
 #include <iostream>
 
 #include <malloc.h>
@@ -36,16 +37,13 @@ __device__ void swap(T* a, T* b)
     T tmp;
     tmp = *a;
     *a = *b;
-    // +1 isn't needed to prevent code elimination by the
-    // compiler, but is added in case it gets smarter in
-    // a future version
-    *b = tmp + T{1};
+    *b = tmp
 }
 
 template <class T>
 __global__ void test_shmem(T* glob_mem)
 {
-    __shared__ T smem[NTHREADS*SHARED_SEGMENTS];
+    volatile __shared__ T smem[NTHREADS*SHARED_SEGMENTS];
 
     int tid = threadIdx.x;
 
@@ -71,6 +69,9 @@ double test_bw(long size)
     T* dev_buffer;
     HANDLE_ERROR( cudaMalloc((void**)&dev_buffer, size) );
     int nblocks = size / (NTHREADS * sizeof(T));
+
+    // call once
+    test_shmem<<<nblocks, NTHREADS>>>(dev_buffer);
 
     cudaEvent_t start, stop;
     HANDLE_ERROR( cudaEventCreate(&start) );
@@ -106,6 +107,6 @@ int main()
 
 
     std::cout << "Bandwidth(int) " << test_bw<int>(size) / 1024 / 1024 / 1024 << " GB/s" << std::endl;
-    std::cout << "Bandwidth(double) " << test_bw<double>(size) / 1024 / 1024 / 1024 << " GB/s" << std::endl;
+    std::cout << "Bandwidth(int64) " << test_bw<int64_t>(size) / 1024 / 1024 / 1024 << " GB/s" << std::endl;
 }
   
