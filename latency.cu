@@ -18,7 +18,7 @@
 #include <cuda_runtime.h>
 
 #ifndef PAGESIZE
-#define PAGESIZE 65536
+#define PAGESIZE 4096
 #endif
 
 #ifndef CACHELINESIZE
