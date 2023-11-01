@@ -4,6 +4,8 @@
 
 // algorithm: pointer chasing, inferred from the description of the intel MLC tool
 
+// profiling command: ncu -s 1 --metrics l1tex__t_sector_hit_rate.pct,lts__t_sector_hit_rate.pct ./a.out
+
 #include <vector>
 #include <iostream>
 #include <algorithm>
@@ -16,7 +18,7 @@
 #include <cuda_runtime.h>
 
 #ifndef PAGESIZE
-#define PAGESIZE 4096
+#define PAGESIZE 65536
 #endif
 
 #ifndef CACHELINESIZE
@@ -75,7 +77,7 @@ inline void checkErr(cudaError_t err, const char* filename, int lineno, const ch
 int main(int argc, char ** argv)
 {
     set_affinity(pthread_self(), 0);
-    bool simulate_large_pages = false;
+    bool simulate_large_pages = true;
 
     if (argc < 2)
     {
@@ -94,10 +96,9 @@ int main(int argc, char ** argv)
         unsigned group_size;
         if (simulate_large_pages) {
             unsigned npages = buffer_size / PAGESIZE;
-            // use 48 out of 64 entries in TLB-L1
-            unsigned ngroups = npages / 48 + 1; 
-            unsigned pages_per_group = npages / ngroups;
-            group_size = pages_per_group * PAGESIZE;
+            unsigned pages_per_group = 1;
+            unsigned ngroups = npages / pages_per_group;
+            group_size  = pages_per_group * PAGESIZE;
             buffer_size = group_size * ngroups;
         }
         else
