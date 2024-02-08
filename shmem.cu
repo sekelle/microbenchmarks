@@ -37,7 +37,7 @@ __device__ void swap(T* a, T* b)
     T tmp;
     tmp = *a;
     *a = *b;
-    *b = tmp
+    *b = tmp;
 }
 
 template <class T>
